@@ -1,0 +1,125 @@
+"apiVersion": "argoproj.io/v1alpha1"
+"kind": "Application"
+"metadata":
+  "name": "argocd"
+  "namespace": "argocd"
+"spec":
+  "destination":
+    "namespace": "argocd"
+    "server": "https://kubernetes.default.svc"
+  "project": "default"
+  "source":
+    "chart": "argo-cd"
+    "helm":
+      "parameters":
+        - "name": "server.rbacConfig.policy\\.default"
+          "value": "role:readonly"
+        - "name": "server.rbacConfig.policy\\.csv"
+          "value": |
+            g, administrators, role:admin
+        - "name": "server.config.oidc\\.config"
+          "value": |
+            "clientID": "1dk3u5t30dr8ml1kg9sa28deq0"
+            "clientSecret": "KMS_ENC:AQICAHiqfFowrl7+H1XOy4l1UMhLmXrKgtVjdJ7NDvMsbrJWxQEzUvCjyYSdyINtKezt0eofAAAAlTCBkgYJKoZIhvcNAQcGoIGEMIGBAgEAMHwGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMTN5dAY+b9ZT+Uq5ZAgEQgE9BDeoQ3b1+UMMLp42X+nA5dbQ68iNUPlpxDeYOvvrc70JiJDoRxO1vSxI6ces+kaCvqjUX1A1o9wqVR8QvwFX4+TYPBDlGbghRCAFfbfHB:"
+            "issuer": "https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_yAL6LTEGZ"
+            "name": "Cognito"
+            "requestedIDTokenClaims":
+              "cognito:groups":
+                "essential": true
+            "requestedScopes":
+            - "openid"
+            - "profile"
+            - "email"
+        - "name": "server.ingress.paths[0]"
+          "value": "/*"
+        - "name": "server.extraArgs[0]"
+          "value": "--insecure"
+        - "name": "server.service.type"
+          "value": "NodePort"
+        - "name": "configs.secret.argocdServerAdminPassword"
+          "value": "$2a$10$jcbUDX1RO4N0OEuNAYACIugmC5cmvfi.6Syec72y3Jz.QGGmzzANu"
+        - "name": "server.ingress.enabled"
+          "value": "true"
+        - "name": "server.config.url"
+          "value": "https://argocd.my-eks-cluster.my-domain.com"
+        - "name": "server.ingress.tls[0].hosts[0]"
+          "value": "argocd.my-eks-cluster.my-domain.com"
+        - "name": "server.ingress.hosts[0]"
+          "value": "argocd.my-eks-cluster.my-domain.com"
+        - "name": "server.ingress.tls[0].secretName"
+          "value": "argocd-my-eks-cluster.my-domain.com-tls"
+        - "name": "server.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/certificate-arn"
+          "value": "arn:aws:acm:eu-central-1:863518836478:certificate/80354708-ad54-49c4-b019-bad9cb5d95cb"
+        - "name": "server.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/listen-ports"
+          "value": '[{"HTTPS":443}]'
+        - "name": "server.ingress.annotations.alb\\.ingress\\.kubernetes\\.io/scheme"
+          "value": "internet-facing"
+        - "name": "server.ingress.annotations.kubernetes\\.io/ingress\\.class"
+          "value": "alb"
+        - "name": "configs.secret.bitbucketServerSecret"
+          "value": ""
+        - "name": "configs.secret.bitbucketUUID"
+          "value": ""
+        - "name": "configs.secret.createSecret"
+          "value": "true"
+        - "name": "configs.secret.githubSecret"
+          "value": ""
+        - "name": "configs.secret.gitlabSecret"
+          "value": ""
+        - "name": "configs.secret.gogsSecret"
+          "value": ""
+        - "name": "dex.enabled"
+          "value": "false"
+        - "name": "global.securityContext.fsGroup"
+          "value": "999"
+        - "name": "installCRDs"
+          "value": "false"
+        - "name": "repoServer.env[0].name"
+          "value": "AWS_DEFAULT_REGION"
+        - "name": "repoServer.env[0].value"
+          "value": "eu-central-1"
+        - "name": "repoServer.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+          "value": "arn:aws:iam::863518836478:role/my-eks-cluster_argocd"
+        - "name": "repoServer.serviceAccount.create"
+          "value": "true"
+        - "name": "repoServer.volumeMounts[0].mountPath"
+          "value": "/opt/decryptor/bin"
+        - "name": "repoServer.volumeMounts[0].name"
+          "value": "decryptor"
+        - "name": "repoServer.volumes[0].configMap.items[0].key"
+          "value": "decryptor"
+        - "name": "repoServer.volumes[0].configMap.items[0].path"
+          "value": "decryptor"
+        - "name": "repoServer.volumes[0].configMap.name"
+          "value": "argocd-decryptor"
+        - "name": "repoServer.volumes[0].name"
+          "value": "decryptor"
+        - "name": "server.config.configManagementPlugins"
+          "value": |
+            - "generate":
+                "args":
+                - "/opt/decryptor/bin/decryptor"
+                "command":
+                - "/usr/bin/python3"
+              "init":
+                "args":
+                - "install"
+                - "boto3"
+                "command":
+                - "/usr/bin/pip3"
+              "name": "decryptor"
+        - "name": "server.config.repositories"
+          "value": |
+            - url: https://gitlab.myrepo.com/myproject/argocd.git
+              usernameSecret:
+                name: argocd-repo-credentials-secret
+                key: username
+              passwordSecret:
+                name: argocd-repo-credentials-secret
+                key: password
+    "repoURL": "https://argoproj.github.io/argo-helm"
+    "targetRevision": "2.7.4"
+  "syncPolicy":
+    "automated":
+      "prune": true
+      "selfHeal": true

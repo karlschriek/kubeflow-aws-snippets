@@ -1,0 +1,36 @@
+"apiVersion": "argoproj.io/v1alpha1"
+"kind": "Application"
+"metadata":
+  "name": "aws-alb-ingress-controller"
+  "namespace": "argocd"
+"spec":
+  "destination":
+    "namespace": "ingress-system"
+    "server": "https://kubernetes.default.svc"
+  "project": "default"
+  "source":
+    "chart": "aws-alb-ingress-controller"
+    "helm":
+      "parameters":
+        - "name": "rbac.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+          "value": "arn:aws:iam::863518836478:role/my-eks-cluster_aws-alb-ingress-controller"
+        - "name": "clusterName"
+          "value": "my-eks-cluster"
+        - "name": "awsVpcID"
+          "value": "vpc-038b1e8ba71bdbecf"
+        - "name": "awsRegion"
+          "value": "eu-central-1"
+        - "name": "resources.limits.cpu"
+          "value": "100m"
+        - "name": "resources.limits.memory"
+          "value": "300Mi"
+        - "name": "resources.requests.cpu"
+          "value": "100m"
+        - "name": "resources.requests.memory"
+          "value": "300Mi"
+    "repoURL": "https://charts.helm.sh/incubator"
+    "targetRevision": "1.0.2"
+  "syncPolicy":
+    "automated":
+      "prune": true
+      "selfHeal": true

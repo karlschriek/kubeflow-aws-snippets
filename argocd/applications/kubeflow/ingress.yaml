@@ -1,0 +1,43 @@
+"apiVersion": "networking.k8s.io/v1beta1"
+"kind": "Ingress"
+"metadata":
+  "annotations":
+    "alb.ingress.kubernetes.io/auth-idp-cognito": '{"UserPoolArn":"arn:aws:cognito-idp:eu-central-1:863518836478:userpool/eu-central-1_yAL6LTEGZ","UserPoolClientId":"6ognrm57vrtndjs0kc6o6hnoda","UserPoolDomain":"863518836478-my-eks-cluster"}'
+    "alb.ingress.kubernetes.io/auth-type": "cognito"
+    "alb.ingress.kubernetes.io/certificate-arn": "arn:aws:acm:eu-central-1:863518836478:certificate/80354708-ad54-49c4-b019-bad9cb5d95cb"
+    "alb.ingress.kubernetes.io/listen-ports": '[{"HTTPS":443}]'
+    "alb.ingress.kubernetes.io/scheme": "internet-facing"
+    "kubernetes.io/ingress.class": "alb"
+  "labels":
+    "app": "kubeflow"
+  "name": "istio-ingress"
+  "namespace": "istio-system"
+"spec":
+  "rules":
+    - "host": "kubeflow.my-eks-cluster.my-domain.com"
+      "http":
+        "paths":
+          - "backend":
+              "serviceName": "istio-ingressgateway"
+              "servicePort": 80
+            "path": "/*"
+    - "host": "serving.my-eks-cluster.my-domain.com"
+      "http":
+        "paths":
+          - "backend":
+              "serviceName": "istio-ingressgateway"
+              "servicePort": 80
+            "path": "/*"
+    - "host": "*.serving.my-eks-cluster.my-domain.com"
+      "http":
+        "paths":
+          - "backend":
+              "serviceName": "istio-ingressgateway"
+              "servicePort": 80
+            "path": "/*"
+  "tls":
+    - "hosts":
+        - "kubeflow.my-eks-cluster.my-domain.com"
+        - "serving.my-eks-cluster.my-domain.com"
+        - "*.serving.my-eks-cluster.my-domain.com"
+      "secretName": "kubeflow-tls-certs"

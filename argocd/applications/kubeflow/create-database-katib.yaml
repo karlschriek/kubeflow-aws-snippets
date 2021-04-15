@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-katib-database
+  namespace: kubeflow
+spec:
+  template:
+    metadata:
+      annotations:
+        "sidecar.istio.io/inject": "false"
+    spec:
+      containers:
+      - name: create-katib-database
+        image: public.ecr.aws/atcommons/utils/mysql-db-creator:latest
+        env:
+        - name: HOST
+          valueFrom:
+            secretKeyRef:
+              name: aws-storage-secret
+              key: rds_host
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              name: aws-storage-secret
+              key: rds_port
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: aws-storage-secret
+              key: rds_username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: aws-storage-secret
+              key: rds_password
+        - name: DATABASE
+          value: katib
+
+      restartPolicy: Never
+  backoffLimit: 5

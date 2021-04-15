@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-storage-workflow-controller-config
+  namespace: kubeflow
+data:
+  config: |
+    {
+      "executorImage":"gcr.io/ml-pipeline/argoexec:v2.7.5-license-compliance",
+      "containerRuntimeExecutor":"docker",
+      "workflowDefaults":{
+        "metadata":{
+          "annotations":{
+            "iam.amazonaws.com/role":"arn:aws:iam::863518836478:role/my-eks-cluster-s3-role"
+          }
+        }
+      },
+      "artifactRepository":{
+        "archiveLogs":true,
+        "s3":{
+          "bucket":"863518836478-my-eks-cluster-kubeflow",
+          "keyPrefix":"artifacts",
+          "endpoint":"s3.amazonaws.com",
+          "insecure":false,
+          "region":"eu-central-1",
+          "useSDKCreds":true
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-storage-ml-pipeline-config
+  namespace: kubeflow
+data:
+  config.json: |
+    {
+      "DBConfig":{
+        "Host":"my-eks-cluster-instance.c6e2xeayekua.eu-central-1.rds.amazonaws.com",
+        "Port":"3306",
+        "DriverName":"mysql",
+        "DataSourceName":"",
+        "DBName":"mlpipeline",
+        "GroupConcatMaxLen":4194304
+      },
+      "ObjectStoreConfig":{
+        "Host":"s3.amazonaws.com",
+        "Region":"eu-central-1",
+        "Secure":true,
+        "BucketName":"863518836478-my-eks-cluster-kubeflow",
+        "PipelineFolder":"pipelines",
+        "PipelinePath":"pipelines",
+        "AccessKey":"",
+        "SecretAccessKey":""
+      },
+      "InitConnectionTimeout":"6m",
+      "DefaultPipelineRunnerServiceAccount":"pipeline-runner"
+    }
+
+  sample_config.json: |
+    [
+      {
+        "name":"[Demo] XGBoost - Training with Confusion Matrix",
+        "description":"[source code](https://github.com/kubeflow/pipelines/blob/master/samples/core/xgboost_training_cm) [GCP Permission requirements](https://github.com/kubeflow/pipelines/blob/master/samples/core/xgboost_training_cm#requirements). A trainer that does end-to-end distributed training for XGBoost models.",
+        "file":"/samples/core/xgboost_training_cm/xgboost_training_cm.py.yaml"
+      },
+      {
+        "name":"[Demo] TFX - Taxi Tip Prediction Model Trainer",
+        "description":"[source code](https://console.cloud.google.com/mlengine/notebooks/deploy-notebook?q=download_url%3Dhttps%253A%252F%252Fraw.githubusercontent.com%252Fkubeflow%252Fpipelines%252Fmaster%252Fsamples%252Fcore%252Fparameterized_tfx_oss%252Ftaxi_pipeline_notebook.ipynb) [GCP Permission requirements](https://github.com/kubeflow/pipelines/blob/master/samples/contrib/parameterized_tfx_oss#permission). Example pipeline that does classification with model analysis based on a public tax cab dataset.",
+        "file":"/samples/core/parameterized_tfx_oss/parameterized_tfx_oss.py.yaml"
+      },
+      {
+        "name":"[Tutorial] Data passing in python components",
+        "description":"[source code](https://github.com/kubeflow/pipelines/tree/master/samples/tutorials/Data%20passing%20in%20python%20components) Shows how to pass data between python components.",
+        "file":"/samples/tutorials/Data passing in python components/Data passing in python components - Files.py.yaml"
+      },
+      {
+        "name":"[Tutorial] DSL - Control structures",
+        "description":"[source code](https://github.com/kubeflow/pipelines/tree/master/samples/tutorials/DSL%20-%20Control%20structures) Shows how to use conditional execution and exit handlers. This pipeline will randomly fail to demonstrate that the exit handler gets executed even in case of failure.",
+        "file":"/samples/tutorials/DSL - Control structures/DSL - Control structures.py.yaml"
+      }
+    ]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-storage-ml-pipeline-ui-config
+  namespace: kubeflow
+data:
+  "viewer-pod-template.json": |
+    {
+      "spec":{
+        "containers":[
+          {
+            "env":[
+              {
+                "name":"AWS_ACCESS_KEY_ID",
+                "valueFrom":{
+                  "secretKeyRef":{
+                    "name":"aws-storage-secret",
+                    "key":"s3_access_key"
+                  }
+                }
+              },
+              {
+                "name":"AWS_SECRET_ACCESS_KEY",
+                "valueFrom":{
+                  "secretKeyRef":{
+                    "name":"aws-storage-secret",
+                    "key":"s3_secret_key"
+                  }
+                }
+              },
+              {
+                "name":"AWS_REGION",
+                "valueFrom":{
+                  "secretKeyRef":{
+                    "name":"aws-storage-secret",
+                    "key":"s3_region"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-storage-ml-pipeline-viewer-template
+  namespace: kubeflow
+data:
+  "viewer-tensorboard-template.json": |
+    {
+      "metadata":{
+        "annotations":{
+          "iam.amazonaws.com/role":"arn:aws:iam::863518836478:role/my-eks-cluster-s3-role"
+        }
+      },
+      "spec":{
+        "containers":[
+          {
+            "env":[
+              {
+                "name":"AWS_REGION",
+                "value":"eu-central-1"
+              }
+            ]
+          }
+        ]
+      }
+    }
